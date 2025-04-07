@@ -1,6 +1,5 @@
-from PyQt6.QtWidgets import QWidget, QApplication, QMessageBox
+from PyQt6.QtWidgets import QWidget, QMessageBox
 from PyQt6.QtGui import QGuiApplication
-from PyQt6.QtCore import Qt
 import cv2
 import os
 
@@ -42,8 +41,6 @@ class ColonyCounterApp(QWidget):
         self.setWindowTitle("Colony Counter")
         self.showMaximized()
         self.setLayout(self.layout_manager.create_main_layout())
-        screen = QGuiApplication.primaryScreen()
-        screen_geometry = screen.availableGeometry()
         self.setGeometry(self.screen_geometry)
 
         self.layout_manager.image_label.setMouseTracking(True)

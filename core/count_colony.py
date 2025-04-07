@@ -5,7 +5,7 @@ from scipy.ndimage import maximum_filter
 from scipy import optimize
 from pyscipopt import Model, quicksum
 
-def intersection_area(r1, r2, d):
+def intersection_area(r1, r2, d, epsilon=1e-6):
     """Compute the intersection area of two circles.
     
     Args:
@@ -16,17 +16,41 @@ def intersection_area(r1, r2, d):
     Returns:
         float: Area of intersection between the two circles.
     """
-    if d >= r1 + r2:
-        return 0.0
-    if d <= abs(r1 - r2):
-        return math.pi * min(r1, r2) ** 2
-    
-    phi = math.acos((d**2 + r1**2 - r2**2) / (2 * d * r1))
-    theta = math.acos((d**2 + r2**2 - r1**2) / (2 * d * r2))
-    term = max(0, (-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2))
-    return r1**2 * phi + r2**2 * theta - 0.5 * math.sqrt(term)
+    if r1 < 0 or r2 < 0 or d < 0:
+        raise ValueError("Radii and distance must be non-negative.")
 
-def filter_circles(circles, duplicate_rel_tol=0.15, overlap_thresh=0.8, epsilon=1e-3, min_radius=10):
+    if r1 < r2:
+        r1, r2 = r2, r1 
+
+    if d >= r1 + r2 - epsilon: 
+        return 0.0
+    if d <= r1 - r2 + epsilon: 
+        return math.pi * r2**2
+    if r1 <= epsilon or r2 <= epsilon: 
+        return 0.0
+        
+    r1_sq = r1**2
+    r2_sq = r2**2
+    d_sq = d**2
+
+    phi_arg = (d_sq + r1_sq - r2_sq) / (2 * d * r1)
+    phi_arg = max(-1.0, min(1.0, phi_arg)) 
+    phi_half = math.acos(phi_arg) 
+
+    theta_arg = (d_sq + r2_sq - r1_sq) / (2 * d * r2)
+    theta_arg = max(-1.0, min(1.0, theta_arg))
+    theta_half = math.acos(theta_arg) 
+
+    area_sector1 = r1_sq * phi_half
+    area_sector2 = r2_sq * theta_half
+    
+    term_inside = (-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2)
+    term_inside = max(0.0, term_inside) 
+    area_kite = 0.5 * math.sqrt(term_inside)
+
+    return area_sector1 + area_sector2 - area_kite
+
+def filter_circles(circles, duplicate_rel_tol=0.15, overlap_thresh=0.85, epsilon=1e-6, min_radius=5):
     """Filter overlapping or duplicate circles based on geometric criteria.
     
     Args:
@@ -39,39 +63,74 @@ def filter_circles(circles, duplicate_rel_tol=0.15, overlap_thresh=0.8, epsilon=
     Returns:
         list: Filtered list of (x, y, radius) tuples with integer coordinates.
     """
-    circles = np.array([c for c in circles if c[2] >= min_radius], dtype=np.float64)
-    if len(circles) == 0:
+    valid_circles = [c for c in circles if c[2] >= min_radius]
+    if not valid_circles:
         return []
+        
+    circles_np = np.array(valid_circles, dtype=np.float64)
     
-    circles = circles[np.argsort(-circles[:, 2])]
-    n = len(circles)
-    keep = np.ones(n, dtype=bool)
+    sort_indices = np.argsort(-circles_np[:, 2])
+    circles_np = circles_np[sort_indices]
+    
+    n = len(circles_np)
+    keep = np.ones(n, dtype=bool) 
 
     for i in range(n):
-        if not keep[i]:
+        if not keep[i]: 
             continue
+            
+        xA, yA, rA = circles_np[i]
         
-        xA, yA, rA = circles[i]
-        dist = np.sqrt(np.sum((circles[i+1:, :2] - [xA, yA])**2, axis=1))
-        rB = circles[i+1:, 2]
+        candidates_indices = np.arange(i + 1, n)
+        if len(candidates_indices) == 0: 
+            break 
+            
+        candidates = circles_np[candidates_indices]
+        xB, yB, rB = candidates[:, 0], candidates[:, 1], candidates[:, 2]
         
-        duplicate = (dist <= duplicate_rel_tol * rA) & (np.abs(rA - rB) <= duplicate_rel_tol * rA)
-        contained = dist + rB <= rA + epsilon
-        overlap_mask = dist < rA
+        dist_sq = (xA - xB)**2 + (yA - yB)**2
+        dist = np.sqrt(np.maximum(dist_sq, 0)) 
         
-        if np.any(overlap_mask):
-            inter_areas = np.array([
-                intersection_area(rA, rb, d) 
-                for rb, d in zip(rB[overlap_mask], dist[overlap_mask])
-            ])
-            small_areas = math.pi * np.minimum(rA, rB[overlap_mask]) ** 2
-            excessive_overlap = (inter_areas / small_areas) >= overlap_thresh
-            overlap_mask[overlap_mask] &= excessive_overlap
-        
-        keep[i+1:] &= ~(duplicate | contained | overlap_mask)
+        duplicate = (dist <= duplicate_rel_tol * rA + epsilon) & \
+                    (np.abs(rA - rB) <= duplicate_rel_tol * rA + epsilon)
 
-    filtered = circles[keep]
-    return [(np.int64(round(x)), np.int64(round(y)), np.int64(round(r))) for x, y, r in filtered]
+        contained = dist + rB <= rA + epsilon
+
+        intersects_mask = (dist > np.abs(rA - rB) + epsilon) & \
+                          (dist < rA + rB - epsilon)
+                          
+        remove_by_overlap = np.zeros(len(candidates), dtype=bool) 
+        
+        intersecting_subset_indices = np.where(intersects_mask)[0]
+        
+        if len(intersecting_subset_indices) > 0:
+            rB_intersect = rB[intersecting_subset_indices]
+            dist_intersect = dist[intersecting_subset_indices]
+            
+            inter_areas = np.array([
+                intersection_area(rA, rb_i, d_i, epsilon) 
+                for rb_i, d_i in zip(rB_intersect, dist_intersect)
+            ])
+            
+            small_areas = math.pi * np.minimum(rA, rB_intersect)**2
+            small_areas = np.maximum(small_areas, epsilon) 
+
+            excessive_overlap_subset = (inter_areas / small_areas) >= overlap_thresh
+            
+            remove_by_overlap[intersecting_subset_indices] = excessive_overlap_subset
+
+        remove_mask = duplicate | contained | remove_by_overlap
+        
+        keep[candidates_indices] &= ~remove_mask 
+
+    filtered_circles_np = circles_np[keep]
+    
+    result = [
+        (np.int64(round(x)), np.int64(round(y)), np.int64(round(r)))
+        for x, y, r in filtered_circles_np
+    ]
+    
+    return result
 
 def find_maxima(img):
     """Identify local maxima in a distance-transformed image to detect potential colony centers.
@@ -86,10 +145,10 @@ def find_maxima(img):
             - centroids (list): List of (x, y, radius) for detected circles.
             - distance_map (np.ndarray): Distance transform of the input image.
     """
-    dist = cv2.distanceTransform(img, cv2.DIST_L2, 5)
+    dist = cv2.distanceTransform(img, cv2.DIST_L2, cv2.DIST_MASK_PRECISE)
     maxima = (dist > 0) & (dist == maximum_filter(dist, footprint=np.ones((3, 3)), mode='constant', cval=1e6))
     y, x = np.nonzero(maxima)
-    centroids = filter_circles(list(zip(x, y, dist[y, x])))
+    centroids = list(zip(x, y, dist[y, x]))
     return len(centroids), maxima, centroids, dist
 
 def distance(cnt_i, cnt_j, cnt_k):

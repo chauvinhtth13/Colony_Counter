@@ -1,5 +1,5 @@
-from PyQt6.QtGui import QPixmap, QPainter, QPen, QImage, QBrush
-from PyQt6.QtCore import Qt, QPoint
+from PyQt6.QtGui import QPixmap, QPainter, QPen, QImage, QBrush, QFont
+from PyQt6.QtCore import Qt
 
 class ImageUtils:
     def __init__(self, parent):
@@ -36,6 +36,39 @@ class ImageUtils:
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.FastTransformation
         ))
+
+    def draw_text_lines(self, lines_coords, number_colony=None):
+        """
+        Draw lines with text labels on the original image.
+        
+        Args:
+            lines_coords (list): List of tuples (x1, y1, x2, y2) representing bounding boxes.
+        """
+        pixmap = self.parent.layout_manager.image_label.pixmap()
+        
+        painter = QPainter(pixmap)
+        pen = QPen(Qt.GlobalColor.blue, 2)
+        painter.setPen(pen)
+        
+        # Set font for text
+        font = QFont("Arial", 18, QFont.Weight.Bold)
+        painter.setFont(font)
+        
+        # Draw each line with a text label
+        for i, (x1, y1, x2, y2) in enumerate(lines_coords, 1):
+
+            # Draw text (e.g., "Line 1") above the top-left corner
+            text = f"Line {i}: {number_colony[i-1]}" if number_colony else f"Line {i}"
+            text_y = y1 - 30  # Position text slightly above the box
+            painter.drawText(x1, text_y, text)
+        
+        painter.end()
+        self.parent.layout_manager.image_label.setPixmap(pixmap.scaled(
+            self.parent.layout_manager.image_label.size(),
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.FastTransformation
+        ))
+
 
     def draw_colony(self, colony_coords):
         """Draw colony center points as small circles on the current pixmap."""

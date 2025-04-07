@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QPushButton, QListWidget, QFileDialog,
-    QSpinBox, QDoubleSpinBox, QGroupBox, QSizePolicy, QLabel, QTableWidget, QTableWidgetItem,
+    QSpinBox, QDoubleSpinBox, QGroupBox, QSizePolicy, QLabel, QTableWidget, QProgressBar,
     QGroupBox, QHeaderView
 )
 from PyQt6.QtCore import Qt
@@ -12,11 +12,20 @@ class LayoutManager:
         self.btn_prev = None
         self.btn_next = None
         self.image_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
+        self.progress_bar = QProgressBar()
         self.bottom_layout = QHBoxLayout()
         self.table_result = None
         self.file_dialog = QFileDialog()
         self.spinbox_groups = []
         self.left_layout = None
+
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setFixedHeight(20)
+        self.progress_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
 
     def create_main_layout(self):
         """Create the main application layout."""
@@ -68,7 +77,9 @@ class LayoutManager:
             int(self.parent.screen_width * 0.6), int(self.parent.screen_height * 0.8)
         )
         center_layout.addWidget(self.image_label, stretch=2)
+    
         center_layout.addLayout(self.bottom_layout, stretch=1)
+        center_layout.addWidget(self.progress_bar, stretch=0)
         return center_layout
 
     def create_right_panel(self):

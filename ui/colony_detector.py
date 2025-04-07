@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QMessageBox
-from core.image_processing import crop_plate, detect_splitting_line, convert_bboxes_to_original
+from core.image_processing import crop_plate, convert_bboxes_to_original
 from core.detect_colony_lines import remove_label, find_colonies, detect_colony_lines
 from core.count_colony import colony_counting
 
@@ -47,10 +47,14 @@ class ColonyDetector:
                 centroids, self.parent.binary_image.shape[:2], (x_min, y_min, x_max, y_max), bbox_type="circle"
             )
             list_centroids_crop.extend(centroids_crop)
+            self.parent.layout_manager.progress_bar.setValue(int((i + 1) / len(self.parent.lines_coords) * 100))
+            
+        self.parent.layout_manager.progress_bar.setValue(100)
 
         self.parent.colony_coords = convert_bboxes_to_original(
             list_centroids_crop, self.parent.original_image.shape[:2], self.parent.cropped_radius, bbox_type="circle"
         )
         self.parent.image_utils.draw_lines(self.parent.view_lines_coords)
+        self.parent.image_utils.draw_text_lines(self.parent.view_lines_coords,number_colony)
         self.parent.image_utils.draw_colony(self.parent.colony_coords)
         self.parent.data_handler.update_table(self.parent.image_paths[self.parent.current_index], number_colony)

@@ -22,20 +22,33 @@ def calculate_angle(p1, p2, p3):
     angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0)) * 180 / np.pi
     return angle
 
-def remove_label(img_org, min_area=10000, max_area=40000, min_solidity=0.8, max_circularity=0.7, approx_epsilon=0.02, angle_threshold_min=10, angle_threshold_max=170):
-    """Remove label-like contours from an image based on geometric properties.
-    
+def remove_label(
+    img_org, 
+    min_area=10000, 
+    max_area=40000, 
+    min_solidity=0.8, 
+    max_circularity=0.7, 
+    approx_epsilon=0.02, 
+    angle_threshold_min=10, 
+    angle_threshold_max=170,
+    min_aspect_ratio=1.0, 
+    max_aspect_ratio=2.5
+):
+    """
+    Remove label-like contours from an image based on geometric properties.
+
     Args:
         img_org (np.ndarray): Input BGR image.
-        min_area (float): Minimum contour area to consider (default: 10000).
-        max_area (float): Maximum contour area to consider (default: 40000).
-        min_solidity (float): Minimum solidity threshold (default: 0.8).
-        max_circularity (float): Maximum circularity threshold (default: 0.7).
-        thresh_eccentricity (float): Eccentricity threshold (unused, default: 0.8).
-        approx_epsilon (float): Contour approximation factor (default: 0.02).
-        angle_threshold_min (float): Minimum angle for vertices (default: 10).
-        angle_threshold_max (float): Maximum angle for vertices (default: 170).
-    
+        min_area (float): Minimum contour area.
+        max_area (float): Maximum contour area.
+        min_solidity (float): Minimum solidity.
+        max_circularity (float): Maximum circularity.
+        approx_epsilon (float): Polygon approximation factor.
+        angle_threshold_min (float): Minimum vertex angle.
+        angle_threshold_max (float): Maximum vertex angle.
+        min_aspect_ratio (float): Minimum aspect ratio of bounding box.
+        max_aspect_ratio (float): Maximum aspect ratio of bounding box.
+
     Returns:
         np.ndarray: Binary image with label-like contours removed.
     """
@@ -45,32 +58,45 @@ def remove_label(img_org, min_area=10000, max_area=40000, min_solidity=0.8, max_
 
     for contour in contours:
         area = cv2.contourArea(contour)
-        if min_area <= area <= max_area:
-            perimeter = cv2.arcLength(contour, True)
-            approx = cv2.approxPolyDP(contour, approx_epsilon * perimeter, True)
+        if not (min_area <= math.floor(area) <= max_area):
+            continue
 
-            vertices = approx.reshape(-1, 2)
-            angles = []
-            for i in range(len(vertices)):
-                p1 = vertices[i]
-                p2 = vertices[(i + 1) % len(vertices)]
-                p3 = vertices[(i + 2) % len(vertices)]
-                angle = calculate_angle(p1, p2, p3)
-                angles.append(angle)
+        rect = cv2.minAreaRect(contour)
+        width, height = rect[1]
+        if width == 0 or height == 0:
+            continue
 
-            angles_valid = all(angle_threshold_min <= angle <= angle_threshold_max for angle in angles)
+        aspect_ratio = max(width, height) / min(width, height)
+        
+        if not (min_aspect_ratio <= aspect_ratio <= max_aspect_ratio):
+            continue
 
-            if angles_valid or 3 <= len(approx) <= 10:
-                hull = cv2.convexHull(contour)
-                hull_area = cv2.contourArea(hull)
-                solidity = float(area) / hull_area if hull_area > 0 else 0
-                circularity = (4 * np.pi * area) / (perimeter ** 2) if perimeter > 0 else 0
+        perimeter = cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, approx_epsilon * perimeter, True)
+        vertices = approx.reshape(-1, 2)
 
-                if solidity >= min_solidity and circularity <= max_circularity:
-                    cv2.drawContours(mask_filtered, [contour], -1, 255, cv2.FILLED)
-    
-    mask_filtered_inv = cv2.bitwise_not(mask_filtered)
-    return cv2.bitwise_and(img_denoise, img_denoise, mask=mask_filtered_inv)
+        # Check angles only if sufficient vertices
+        if len(vertices) >= 3:
+            angles = [
+                calculate_angle(vertices[i], vertices[(i + 1) % len(vertices)], vertices[(i + 2) % len(vertices)])
+                for i in range(len(vertices))
+            ]
+            if not all(angle_threshold_min <= angle <= angle_threshold_max for angle in angles):
+                continue
+        
+        hull = cv2.convexHull(contour)
+        hull_area = cv2.contourArea(hull)
+        if hull_area == 0:
+            continue
+
+        solidity = area / hull_area
+        circularity = (4 * np.pi * area) / (perimeter ** 2)
+
+        if solidity >= min_solidity and round(circularity,1) <= max_circularity:
+            cv2.drawContours(mask_filtered, [contour], -1, 255, cv2.FILLED)
+
+    mask_inv = cv2.bitwise_not(mask_filtered)
+    return cv2.bitwise_and(img_denoise, img_denoise, mask=mask_inv)
 
 def find_colonies(img_org):
     """Detect colonies in an image and return their centroids and bounding boxes.

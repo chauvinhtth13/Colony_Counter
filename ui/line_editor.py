@@ -48,11 +48,6 @@ class LineEditor:
             QMessageBox.warning(self.parent, "Warning", "Please click 'Modify Lines' first")
             return
         
-        # Check if an image is loaded
-        if self.parent.original_image is None:
-            QMessageBox.warning(self.parent, "Warning", "Please load an image first")
-            return
-        
         # Enforce the limit of 4 lines
         if len(self.parent.view_lines_coords) >= 4:
             QMessageBox.warning(self.parent, "Cannot Add Line", 
@@ -61,9 +56,8 @@ class LineEditor:
         
         # Determine ymin and ymax from existing lines or use defaults
         if self.parent.view_lines_coords:
-            y_coords = [y for coord in self.parent.view_lines_coords for y in (coord[1], coord[3])]
-            ymin = min(y_coords)
-            ymax = max(y_coords)
+            ymin = self.parent.view_lines_coords[0][1]
+            ymax = self.parent.view_lines_coords[0][3]
         else:
             orig_h = self.parent.original_image.shape[0]
             ymin = 0
