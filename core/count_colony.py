@@ -86,7 +86,7 @@ def find_maxima(img):
             - centroids (list): List of (x, y, radius) for detected circles.
             - distance_map (np.ndarray): Distance transform of the input image.
     """
-    dist = cv2.distanceTransform(img, cv2.DIST_L2, 3)
+    dist = cv2.distanceTransform(img, cv2.DIST_L2, 5)
     maxima = (dist > 0) & (dist == maximum_filter(dist, footprint=np.ones((3, 3)), mode='constant', cval=1e6))
     y, x = np.nonzero(maxima)
     centroids = filter_circles(list(zip(x, y, dist[y, x])))

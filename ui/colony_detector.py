@@ -14,8 +14,8 @@ class ColonyDetector:
             return
         
         self.parent.cropped_image, self.parent.cropped_radius = crop_plate(self.parent.original_image)
-        img_bin = remove_label(self.parent.cropped_image)
-        self.parent.binary_image = detect_splitting_line(img_bin)
+        self.parent.binary_image = remove_label(self.parent.cropped_image)
+        #self.parent.binary_image = detect_splitting_line(img_bin)
         centroids = find_colonies(self.parent.cropped_image)
         self.parent.lines_coords = detect_colony_lines(centroids)
         self.parent.view_lines_coords = convert_bboxes_to_original(
