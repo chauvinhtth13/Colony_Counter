@@ -1,3 +1,4 @@
+import numpy as np
 from PyQt6.QtWidgets import QMessageBox
 from PyQt6.QtCore import Qt, QPoint
 
@@ -87,8 +88,8 @@ class LineEditor:
         self.drag_corner = None
         self.new_line_start = None
         self.parent.view_lines_coords = [coord for coord in self.parent.view_lines_coords]
-        self.parent.lines_coords = [self.map_to_cropped_coords(coord) for coord in self.parent.view_lines_coords]
-        print(self.parent.lines_coords)
+        coords = np.array([self.map_to_cropped_coords(coord) for coord in self.parent.view_lines_coords])
+        self.parent.lines_coords = coords[np.argsort(coords[:, 0])].tolist()
         self.parent.layout_manager.update_spinboxes(self.parent.lines_coords)
         self.parent.layout_manager.set_button_states(modifying=False, adding=False)
         self.parent.image_utils.draw_lines(self.parent.view_lines_coords)
