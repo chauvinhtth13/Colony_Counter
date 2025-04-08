@@ -26,7 +26,6 @@ class LayoutManager:
         self.progress_bar.setFixedHeight(20)
         self.progress_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-
     def create_main_layout(self):
         """Create the main application layout."""
         main_layout = QHBoxLayout()
