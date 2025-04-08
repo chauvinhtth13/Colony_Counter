@@ -35,6 +35,7 @@ class LineEditor:
         self.adding_line = False
         self.parent.layout_manager.clear_spinboxes()
         self.parent.layout_manager.set_button_states(modifying=True)
+        self.parent.layout_manager.progress_bar.setValue(0)
         self.parent.image_utils.draw_lines(self.parent.view_lines_coords)
         QMessageBox.information(self.parent, "Modify Lines", 
                                 "Click and drag corners to resize or inside to move lines. "

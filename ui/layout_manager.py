@@ -40,22 +40,22 @@ class LayoutManager:
         self.left_layout = QVBoxLayout()
 
         button_configs = [
-            ("Select Images", self.parent.load_images, "Load image files"),
-            ("Previous Image", self.parent.show_previous_image, "Go to previous image"),
-            ("Next Image", self.parent.show_next_image, "Go to next image"),
-            ("Detect Lines", self.parent.detect_lines, "Detect colony lines"),
-            ("Modify Lines", self.parent.modify_lines, "Adjust existing lines"),
-            ("Add Line", self.parent.add_line, "Add a new line"),
-            ("Confirm Lines", self.parent.confirm_lines, "Finalize line changes"),
-            ("Count Colonies", self.parent.count_colony, "Count colonies in lines"),
-            ("Save Image", self.parent.save_image, "Save processed image")
+            ("Select Images", self.parent.load_images, "Load image files",True),
+            ("Previous Image", self.parent.show_previous_image, "Go to previous image",False),
+            ("Next Image", self.parent.show_next_image, "Go to next image",False),
+            ("Detect Lines", self.parent.detect_lines, "Detect colony lines",True),
+            ("Modify Lines", self.parent.modify_lines, "Adjust existing lines",False),
+            ("Add Line", self.parent.add_line, "Add a new line",False),
+            ("Confirm Lines", self.parent.confirm_lines, "Finalize line changes",False),
+            ("Count Colonies", self.parent.count_colony, "Count colonies in lines",False),
+            ("Save Image", self.parent.save_image, "Save processed image",False)
         ]
 
         self.list_widget.itemClicked.connect(self.parent.show_selected_image)
         nav_layout = QHBoxLayout()
 
-        for text, callback, tooltip in button_configs:
-            btn = self.create_button(text, callback, tooltip)
+        for text, callback, tooltip,initial_state in button_configs:
+            btn = self.create_button(text, callback, tooltip, initial_state)
             if text in ["Previous Image", "Next Image"]:
                 nav_layout.addWidget(btn)
             else:
@@ -92,18 +92,18 @@ class LayoutManager:
         right_layout.addWidget(self.table_result)
 
         right_layout.addWidget(
-            self.create_button("Save Results", self.parent.data_handler.save_to_xlsx, "Save results to Excel")
+            self.create_button("Save Results", self.parent.data_handler.save_to_xlsx, "Save results to Excel",True)
         )
         return right_layout
 
-    def create_button(self, text, callback=None, tooltip=""):
+    def create_button(self, text, callback=None, tooltip="",initial_state=False):
         """Create a button with optional callback and tooltip."""
         btn = QPushButton(text)
         btn.setMinimumHeight(40)
         if callback:
             btn.clicked.connect(callback)
-        else:
-            btn.setEnabled(False)
+            
+        btn.setEnabled(initial_state)
         btn.setToolTip(tooltip)
         return btn
 
@@ -186,19 +186,33 @@ class LayoutManager:
         self.btn_prev.setEnabled(self.parent.current_index > 0) # type: ignore
         self.btn_next.setEnabled(self.parent.current_index < len(self.parent.image_paths) - 1) # type: ignore
 
-    def set_button_states(self, modifying=False, adding=False):
+    def reset_button_states(self):
+        for i in range(self.left_layout.count()):
+                item = self.left_layout.itemAt(i)
+                if item.widget() and isinstance(item.widget(), QPushButton):
+                    text = item.widget().text()
+                    if text in ["Modify Lines","Count Colonies","Add Line","Confirm Lines","Save Image"]:
+                        item.widget().setEnabled(False)
+
+    def set_button_states(self,detecting=False, modifying=False, adding=False):
         """Set button enabled states based on modification mode."""
-        self.btn_prev.setEnabled(not (modifying or adding) and self.parent.current_index > 0)
-        self.btn_next.setEnabled(not (modifying or adding) and self.parent.current_index < len(self.parent.image_paths) - 1)
         if self.left_layout is None:
             return
+
+        self.btn_prev.setEnabled(not (modifying or adding) and self.parent.current_index > 0)
+        self.btn_next.setEnabled(not (modifying or adding) and self.parent.current_index < len(self.parent.image_paths) - 1)
+
         for i in range(self.left_layout.count()):
             item = self.left_layout.itemAt(i)
             if item.widget() and isinstance(item.widget(), QPushButton):
                 text = item.widget().text()
-                if text == "Modify Lines":
-                    item.widget().setEnabled(not modifying)
-                elif text in ["Add Line", "Confirm Lines"]:
-                    item.widget().setEnabled(modifying and not adding)  # Active during Modify Lines mode
-                elif text not in ["Previous Image", "Next Image"]:
-                    item.widget().setEnabled(not (modifying or adding))
+                if modifying:
+                    if text == "Modify Lines":
+                        item.widget().setEnabled(not modifying)
+                    elif text in ["Add Line", "Confirm Lines"]:
+                        item.widget().setEnabled(modifying and not adding)  # Active during Modify Lines mode
+                    elif text not in ["Previous Image", "Next Image"]:
+                        item.widget().setEnabled(not (modifying or adding))
+                if detecting:
+                    if text in ["Modify Lines","Count Colonies","Save Image"]:
+                        item.widget().setEnabled(True)

@@ -27,7 +27,7 @@ def remove_label(
     min_area=10000, 
     max_area=40000, 
     min_solidity=0.8, 
-    max_circularity=0.7, 
+    max_circularity=0.75, 
     approx_epsilon=0.02, 
     angle_threshold_min=10, 
     angle_threshold_max=170,
@@ -92,7 +92,7 @@ def remove_label(
         solidity = area / hull_area
         circularity = (4 * np.pi * area) / (perimeter ** 2)
 
-        if solidity >= min_solidity and round(circularity,1) <= max_circularity:
+        if solidity >= min_solidity and round(circularity,2) <= max_circularity:
             cv2.drawContours(mask_filtered, [contour], -1, 255, cv2.FILLED)
 
     mask_inv = cv2.bitwise_not(mask_filtered)
@@ -121,6 +121,17 @@ def find_colonies(img_org):
             centroids_colony.append([cx, cy, radius, x, y, x + w, y + h])
 
     return np.array(centroids_colony) if centroids_colony else None
+
+def sort_lines(lines):
+    """Sort lines based on their x-coordinates.
+    
+    Args:
+        lines (list): List of (x_top, y_top, x_bottom, y_bottom) tuples.
+    
+    Returns:
+        list: Sorted list of lines based on x-coordinates.
+    """
+    return sorted(lines, key=lambda line: line[0])
 
 def detect_colony_lines(centroids_colony):
     """Cluster colonies into vertical lines based on x-coordinates and normalize y-boundaries.
@@ -166,4 +177,4 @@ def detect_colony_lines(centroids_colony):
         y_minimum, y_maximum = np.min(line_coords, axis=0)[1], np.max(line_coords, axis=0)[3]
         line_coords = [(x_min, y_minimum, x_max, y_maximum) for x_min, _, x_max, _ in line_coords]
 
-    return sorted(line_coords, key=lambda coord: coord[0])
+    return sort_lines(line_coords)

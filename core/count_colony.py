@@ -146,7 +146,7 @@ def find_maxima(img):
             - distance_map (np.ndarray): Distance transform of the input image.
     """
     dist = cv2.distanceTransform(img, cv2.DIST_L2, cv2.DIST_MASK_PRECISE)
-    maxima = (dist > 0) & (dist == maximum_filter(dist, footprint=np.ones((3, 3)), mode='constant', cval=1e6))
+    maxima = (dist > 0) & (dist == maximum_filter(dist, footprint=np.ones((3, 3)), mode='constant', cval=-1))
     y, x = np.nonzero(maxima)
     centroids = list(zip(x, y, dist[y, x]))
     return len(centroids), maxima, centroids, dist

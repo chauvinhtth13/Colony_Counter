@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QMessageBox
 from core.image_processing import crop_plate, convert_bboxes_to_original
-from core.detect_colony_lines import remove_label, find_colonies, detect_colony_lines
+from core.detect_colony_lines import remove_label, find_colonies, detect_colony_lines, sort_lines
 from core.count_colony import colony_counting
 
 class ColonyDetector:
@@ -23,6 +23,7 @@ class ColonyDetector:
         )
         self.parent.layout_manager.update_spinboxes(self.parent.lines_coords)
         self.parent.image_utils.draw_lines(self.parent.view_lines_coords)
+        self.parent.layout_manager.set_button_states(detecting=True)
 
     def count_colony(self):
         """Count colonies in detected lines and update the results table."""
@@ -54,7 +55,6 @@ class ColonyDetector:
         self.parent.colony_coords = convert_bboxes_to_original(
             list_centroids_crop, self.parent.original_image.shape[:2], self.parent.cropped_radius, bbox_type="circle"
         )
-        self.parent.image_utils.draw_lines(self.parent.view_lines_coords)
-        #self.parent.image_utils.draw_text_lines(self.parent.view_lines_coords,number_colony)
-        self.parent.image_utils.draw_colony(self.parent.colony_coords)
+        self.parent.image_utils.draw_lines(sort_lines(self.parent.view_lines_coords))
+        self.parent.image_utils.draw_colony(sort_lines(self.parent.view_lines_coords),number_colony, self.parent.colony_coords)
         self.parent.data_handler.update_table(self.parent.image_paths[self.parent.current_index], number_colony)

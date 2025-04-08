@@ -37,41 +37,8 @@ class ImageUtils:
             Qt.TransformationMode.FastTransformation
         ))
 
-    # def draw_text_lines(self, lines_coords, number_colony=None):
-    #     """
-    #     Draw lines with text labels on the original image.
-        
-    #     Args:
-    #         lines_coords (list): List of tuples (x1, y1, x2, y2) representing bounding boxes.
-    #     """
-    #     pixmap = self.parent.layout_manager.image_label.pixmap()
-        
-    #     painter = QPainter(pixmap)
-    #     pen = QPen(Qt.GlobalColor.blue, 2)
-    #     painter.setPen(pen)
-        
-    #     # Set font for text
-    #     font = QFont("Arial", 18, QFont.Weight.Bold)
-    #     painter.setFont(font)
-        
-    #     # Draw each line with a text label
-    #     for i, (x1, y1, x2, y2) in enumerate(lines_coords, 1):
 
-    #         # Draw text (e.g., "Line 1") above the top-left corner
-    #         text = f"Line {i}: {number_colony[i-1]}" if number_colony else f"Line {i}"
-    #         text_x = x1
-    #         text_y = y1  # Position text slightly above the box
-    #         painter.drawText(text_x, text_y, text)
-        
-    #     painter.end()
-    #     self.parent.layout_manager.image_label.setPixmap(pixmap.scaled(
-    #         self.parent.layout_manager.image_label.size(),
-    #         Qt.AspectRatioMode.KeepAspectRatio,
-    #         Qt.TransformationMode.FastTransformation
-    #     ))
-
-
-    def draw_colony(self, colony_coords):
+    def draw_colony(self, lines_coords, number_colony, colony_coords):
         """Draw colony center points as small circles on the current pixmap."""
         pixmap = self.parent.layout_manager.image_label.pixmap()
         if not pixmap:
@@ -96,7 +63,20 @@ class ImageUtils:
         pen = QPen(Qt.GlobalColor.blue, 2)
         painter.setPen(pen)
         painter.setBrush(QBrush(Qt.GlobalColor.blue, Qt.BrushStyle.SolidPattern))
-        point_diameter = 6
+        point_diameter = 5
+
+        font = QFont("Arial", 12, QFont.Weight.Bold)
+        painter.setFont(font)
+        
+        # Draw each line with a text label
+        for i, (x1, y1, x2, y2) in enumerate(lines_coords, 1):
+
+            # Draw text (e.g., "Line 1") above the top-left corner
+            text = f"Line {i}: {number_colony[i-1]}" if number_colony else f"Line {i}"
+            text_x = int(x1 * scale_factor + offset_x)
+            text_y = int(y1 * scale_factor + offset_y) - 10 # Position text slightly above the box
+            painter.drawText(text_x, text_y, text)
+
         for cx, cy, _ in colony_coords:
             scaled_x = int(cx * scale_factor + offset_x)
             scaled_y = int(cy * scale_factor + offset_y)

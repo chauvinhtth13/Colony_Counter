@@ -80,6 +80,7 @@ class ColonyCounterApp(QWidget):
         self.image_utils.display_image(self.original_image)
         self.layout_manager.clear_spinboxes()
         self.layout_manager.update_navigation_buttons()
+        self.layout_manager.reset_button_states()
         self.line_editor.reset_line_states()
 
     def show_previous_image(self):
