@@ -59,7 +59,7 @@ To run or modify the source code:
     ```
 4.  **Run the Application**:
     ```bash
-    python run.py
+    python main.py
     ```
 
 ---
