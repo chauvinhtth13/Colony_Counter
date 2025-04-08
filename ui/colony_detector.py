@@ -55,6 +55,6 @@ class ColonyDetector:
             list_centroids_crop, self.parent.original_image.shape[:2], self.parent.cropped_radius, bbox_type="circle"
         )
         self.parent.image_utils.draw_lines(self.parent.view_lines_coords)
-        self.parent.image_utils.draw_text_lines(self.parent.view_lines_coords,number_colony)
+        #self.parent.image_utils.draw_text_lines(self.parent.view_lines_coords,number_colony)
         self.parent.image_utils.draw_colony(self.parent.colony_coords)
         self.parent.data_handler.update_table(self.parent.image_paths[self.parent.current_index], number_colony)

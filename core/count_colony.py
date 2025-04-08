@@ -367,10 +367,6 @@ def seg_counting(labels, label_val, lam=38, d_t=0.5, min_radius=10):
 
     model.optimize()
 
-    var_x = [
-        [model.getVal(x[i, j]) for j in range(count)]
-        for i in range(len(contours_split))
-    ]
     var_z = [model.getVal(z[j]) for j in range(count)]
 
     list_centroids = [
