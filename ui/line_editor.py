@@ -88,6 +88,7 @@ class LineEditor:
         self.parent.layout_manager.update_spinboxes(self.parent.lines_coords)
         self.parent.layout_manager.set_button_states(modifying=False, adding=False)
         self.parent.image_utils.draw_lines(self.parent.view_lines_coords)
+        self.parent.layout_manager.set_button_states(confirming=True)
         QMessageBox.information(self.parent, "Lines Confirmed", "Line modifications confirmed.")
 
     def mouse_press_event(self, event):

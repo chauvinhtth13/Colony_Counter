@@ -193,7 +193,7 @@ class LayoutManager:
                     if text in ["Modify Lines","Count Colonies","Add Line","Confirm Lines","Save Image"]:
                         item.widget().setEnabled(False)
 
-    def set_button_states(self,detecting=False, modifying=False, adding=False):
+    def set_button_states(self,detecting=False, modifying=False, adding=False, confirming=False):
         """Set button enabled states based on modification mode."""
         if self.left_layout is None:
             return
@@ -214,4 +214,9 @@ class LayoutManager:
                         item.widget().setEnabled(not (modifying or adding))
                 if detecting:
                     if text in ["Modify Lines","Count Colonies","Save Image"]:
+                        item.widget().setEnabled(True)
+                if confirming:
+                    if text in ["Add Line", "Confirm Lines"]:
+                        item.widget().setEnabled(False)
+                    else:
                         item.widget().setEnabled(True)

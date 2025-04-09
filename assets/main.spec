@@ -19,6 +19,8 @@ a = Analysis(
         'PyQt6.QtMultimedia', 'PyQt6.QtNetwork', 'PyQt6.QtOpenGL', 'PyQt6.QtSql',
         'PyQt6.QtTest', 'PyQt6.QtWeb*', 'PyQt6.QtXml', 'PyQt6.uic'
     ],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
     noarchive=False,
     optimize=0,
 )
@@ -35,13 +37,13 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    upx_exclude=[],
+    upx_exclude=['Qt6Core.dll', 'Qt6Gui.dll', 'Qt6Widgets.dll'],
     runtime_tmpdir=None,
-    console=False,
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['assets\\icon.ico'],
+    icon='assets\icon.ico'
 )
