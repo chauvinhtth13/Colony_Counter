@@ -2,10 +2,13 @@ from PyQt6.QtWidgets import QMessageBox
 from core.image_processing import crop_plate, convert_bboxes_to_original
 from core.detect_colony_lines import remove_label, find_colonies, detect_colony_lines, sort_lines
 from core.count_colony import colony_counting
+from ultralytics import YOLO
 
+MODEL_PATH = "models/best.pt"
 class ColonyDetector:
     def __init__(self, parent):
         self.parent = parent
+        self.model = YOLO(MODEL_PATH)
 
     def detect_lines(self):
         """Detect colony lines and draw them on the image."""
@@ -36,13 +39,14 @@ class ColonyDetector:
         list_centroids_crop = []
         
         for i, (x_min, y_min, x_max, y_max) in enumerate(self.parent.lines_coords):
-            img_line = self.parent.binary_image[y_min:y_max, x_min:x_max]
+            img_bin_line = self.parent.binary_image[y_min:y_max, x_min:x_max]
+            img_line = self.parent.cropped_image[y_min:y_max, x_min:x_max]
             p = params[i] if i < len(params) and len(params[i]) == 3 else [
                 self.parent.default_params["Lambda"],
                 self.parent.default_params["Spacing"],
                 self.parent.default_params["Min Radius"]
             ]
-            count, centroids = colony_counting(img_line, *p)
+            count, centroids = colony_counting(img_bin_line, *p)
             number_colony.append(count)
             centroids_crop = convert_bboxes_to_original(
                 centroids, self.parent.binary_image.shape[:2], (x_min, y_min, x_max, y_max), bbox_type="circle"
