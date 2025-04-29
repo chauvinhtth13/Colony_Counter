@@ -133,7 +133,7 @@ def sort_lines(lines):
     """
     return sorted(lines, key=lambda line: line[0])
 
-def detect_colony_lines(centroids_colony):
+def detect_colony_lines(centroids_colony, silhouette_weight=1.0, bic_weight=0.1):
     """Cluster colonies into vertical lines based on x-coordinates and normalize y-boundaries.
     
     Args:
@@ -142,39 +142,51 @@ def detect_colony_lines(centroids_colony):
     Returns:
         list: Sorted list of (x_top, y_top, x_bottom, y_bottom) tuples representing colony lines.
     """
-    coords = centroids_colony[:, 0].reshape(-1, 1)
-    best_score = -1
-    best_labels = None
-    
-    for k in range(1, 5):
+    if centroids_colony.size == 0:
+        return []
+
+    coords = centroids_colony[:, 0:1]
+    n_samples = len(coords)
+
+    best_score = float('-inf')
+    best_labels = np.zeros(n_samples, dtype=int)
+
+    max_clusters = min(n_samples, 5)
+    for k in range(1, max_clusters):
         gmm = GaussianMixture(
             n_components=k,
             random_state=42,
             covariance_type="full",
+            n_init=5,
+            reg_covar=1e-5
         )
         labels = gmm.fit_predict(coords)
-        
-        if k > 1 and len(np.unique(labels)) > 1:
-            score = silhouette_score(coords, labels)
+        bic = gmm.bic(coords)
+
+        if len(np.unique(labels)) > 1:
+            sil_score = silhouette_score(coords, labels)
         else:
-            score = -gmm.bic(coords)
+            sil_score = 0  # no silhouette for k=1
         
-        if score > best_score:
-            best_score = score
+        combined_score = (silhouette_weight * sil_score) - (bic_weight * bic)
+
+        if combined_score > best_score:
+            best_score = combined_score
             best_labels = labels
 
-    if best_labels is None:
+    line_coords = []
+    for label in np.unique(best_labels):
+        cluster_points = centroids_colony[best_labels == label]
+        x_min, y_min = np.min(cluster_points[:, 3:5], axis=0)
+        x_max, y_max = np.max(cluster_points[:, 5:7], axis=0)
+        line_coords.append((int(x_min), int(y_min), int(x_max), int(y_max)))
+
+    if not line_coords:
         return []
 
-    line_coords = []
-    for i in np.unique(best_labels):
-        cluster_points = centroids_colony[best_labels == i]
-        x_top, y_top = np.min(cluster_points[:, 3:5], axis=0)
-        x_bottom, y_bottom = np.max(cluster_points[:, 5:7], axis=0)
-        line_coords.append((int(x_top), int(y_top), int(x_bottom), int(y_bottom)))
-
-    if line_coords:
-        y_minimum, y_maximum = np.min(line_coords, axis=0)[1], np.max(line_coords, axis=0)[3]
-        line_coords = [(x_min, y_minimum, x_max, y_maximum) for x_min, _, x_max, _ in line_coords]
+    # Normalize y-boundaries across all lines
+    y_min = min(line[1] for line in line_coords)
+    y_max = max(line[3] for line in line_coords)
+    line_coords = [(x_min, y_min, x_max, y_max) for x_min, _, x_max, _ in line_coords]
 
     return sort_lines(line_coords)

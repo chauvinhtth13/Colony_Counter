@@ -22,12 +22,12 @@ class ColonyCounterApp(QWidget):
         self.view_lines_coords = []
         self.colony_coords = []
         self.spinbox_groups = []
-        self.default_params = {"Lambda": 38, "Spacing": 0.5, "Min Radius": 0}
+        self.default_params = {"Lambda": 38, "Spacing": 0.5, "Min Radius": 0, "Confidence": 0.5}
 
         screen = QGuiApplication.primaryScreen()
         self.screen_geometry = screen.availableGeometry()
-        self.screen_width = self.screen_geometry.width()
-        self.screen_height = self.screen_geometry.height()
+        self.screen_width = max(1980,self.screen_geometry.width())
+        self.screen_height = max(1000,self.screen_geometry.height())
 
         self.layout_manager = LayoutManager(self)
         self.image_utils = ImageUtils(self)

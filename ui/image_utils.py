@@ -1,4 +1,4 @@
-from PyQt6.QtGui import QPixmap, QPainter, QPen, QImage, QBrush, QFont
+from PyQt6.QtGui import QPixmap, QPainter, QPen, QImage, QBrush, QFont, QColor
 from PyQt6.QtCore import Qt
 
 class ImageUtils:
@@ -60,13 +60,12 @@ class ImageUtils:
             offset_y = 0
 
         painter = QPainter(pixmap)
-        pen = QPen(Qt.GlobalColor.blue, 2)
-        painter.setPen(pen)
-        painter.setBrush(QBrush(Qt.GlobalColor.blue, Qt.BrushStyle.SolidPattern))
-        point_diameter = 5
 
         font = QFont("Arial", 12, QFont.Weight.Bold)
         painter.setFont(font)
+
+        text_pen = QPen(Qt.GlobalColor.blue, 2)
+        painter.setPen(text_pen)
         
         # Draw each line with a text label
         for i, (x1, y1, x2, y2) in enumerate(lines_coords, 1):
@@ -76,6 +75,24 @@ class ImageUtils:
             text_x = int(x1 * scale_factor + offset_x)
             text_y = int(y1 * scale_factor + offset_y) - 10 # Position text slightly above the box
             painter.drawText(text_x, text_y, text)
+
+        circle_pen = QPen(Qt.GlobalColor.black, 1)
+        painter.setPen(circle_pen)
+
+        # 1. Create a base QColor object for blue
+        fill_color = QColor(Qt.GlobalColor.blue)
+
+        # 2. Set the alpha value (0 = transparent, 255 = opaque)
+        #    Choose a value between 0 and 255. For example, 128 is roughly 50% transparent.
+        alpha_value = 128 # Adjust this value (0-255) for desired transparency
+        fill_color.setAlpha(alpha_value)
+
+        # 3. Create the QBrush using the QColor (with alpha) and SolidPattern
+        circle_brush = QBrush(fill_color, Qt.BrushStyle.SolidPattern)
+
+        painter.setBrush(circle_brush)
+        
+        point_diameter = 5
 
         for cx, cy, _ in colony_coords:
             scaled_x = int(cx * scale_factor + offset_x)

@@ -1,10 +1,23 @@
 from PyQt6.QtWidgets import QMessageBox
 from core.image_processing import crop_plate, convert_bboxes_to_original
 from core.detect_colony_lines import remove_label, find_colonies, detect_colony_lines, sort_lines
-from core.count_colony import colony_counting
+from core.count_colony import colony_counting, colony_counting_yolo
 from ultralytics import YOLO
+import os
+import sys
 
-MODEL_PATH = "models/best.pt"
+
+def resource_path(relative_path):
+    """Lấy đường dẫn tuyệt đối cho tài nguyên, hoạt động cho cả dev và PyInstaller"""
+    if hasattr(sys, '_MEIPASS'):
+        # Đường dẫn tới thư mục tạm khi chạy file thực thi
+        base_path = sys._MEIPASS
+    else:
+        # Đường dẫn gốc trong môi trường phát triển
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+MODEL_PATH = resource_path("models/best.pt")
 class ColonyDetector:
     def __init__(self, parent):
         self.parent = parent
@@ -38,27 +51,42 @@ class ColonyDetector:
         number_colony = []
         list_centroids_crop = []
         
-        for i, (x_min, y_min, x_max, y_max) in enumerate(self.parent.lines_coords):
-            img_bin_line = self.parent.binary_image[y_min:y_max, x_min:x_max]
-            img_line = self.parent.cropped_image[y_min:y_max, x_min:x_max]
-            p = params[i] if i < len(params) and len(params[i]) == 3 else [
-                self.parent.default_params["Lambda"],
-                self.parent.default_params["Spacing"],
-                self.parent.default_params["Min Radius"]
+        # for i, (x_min, y_min, x_max, y_max) in enumerate(self.parent.lines_coords):
+            # img_bin_line = self.parent.binary_image[y_min:y_max, x_min:x_max]
+            # p = params[i] if i < len(params) and len(params[i]) == 3 else [
+            #     self.parent.default_params["Lambda"],
+            #     self.parent.default_params["Spacing"],
+            #     self.parent.default_params["Min Radius"]
+            # ]
+            # count, centroids = colony_counting(img_bin_line, *p)
+        for i, (x_min, y_min, x_max, y_max) in enumerate(self.parent.view_lines_coords):
+
+            img_line = self.parent.original_image[y_min:y_max, x_min:x_max]
+
+            p = params[i] if i < len(params) and len(params[i]) == 1 else [
+                self.parent.default_params["Confidence"]
             ]
-            count, centroids = colony_counting(img_bin_line, *p)
+            count, centroids = colony_counting_yolo(img_line, self.model, *p)
+
             number_colony.append(count)
+
+            # centroids_crop = convert_bboxes_to_original(
+            #     centroids, self.parent.binary_image.shape[:2], (x_min, y_min, x_max, y_max), bbox_type="circle"
+            # )
+
             centroids_crop = convert_bboxes_to_original(
-                centroids, self.parent.binary_image.shape[:2], (x_min, y_min, x_max, y_max), bbox_type="circle"
+                centroids, self.parent.original_image.shape[:2], (x_min, y_min, x_max, y_max), bbox_type="circle"
             )
             list_centroids_crop.extend(centroids_crop)
             self.parent.layout_manager.progress_bar.setValue(int((i + 1) / len(self.parent.lines_coords) * 100))
             
         self.parent.layout_manager.progress_bar.setValue(100)
 
-        self.parent.colony_coords = convert_bboxes_to_original(
-            list_centroids_crop, self.parent.original_image.shape[:2], self.parent.cropped_radius, bbox_type="circle"
-        )
+        # self.parent.colony_coords = convert_bboxes_to_original(
+        #     list_centroids_crop, self.parent.original_image.shape[:2], self.parent.cropped_radius, bbox_type="circle"
+        # )
+        self.parent.colony_coords = list_centroids_crop
+
         self.parent.image_utils.draw_lines(sort_lines(self.parent.view_lines_coords))
         self.parent.image_utils.draw_colony(sort_lines(self.parent.view_lines_coords),number_colony, self.parent.colony_coords)
         self.parent.data_handler.update_table(self.parent.image_paths[self.parent.current_index], number_colony)

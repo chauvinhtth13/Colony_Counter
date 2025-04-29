@@ -4,7 +4,6 @@ import cv2
 from scipy.ndimage import maximum_filter
 from scipy import optimize
 from pyscipopt import Model, quicksum
-from ultralytics import YOLO
 
 def intersection_area(r1, r2, d, epsilon=1e-6):
     """Compute the intersection area of two circles.
@@ -403,20 +402,16 @@ def colony_counting(img_line_bin, lam=38, d=0.5, min_radius=0):
 
     return counting_result, list_centroids
 
-def count_colony_dl(img_line,model):
-    """Count colonies in a binary image using a deep learning model.
-    
-    Args:
-        img_line (np.ndarray): Binary image containing colony regions.
-    
-    Returns:
-        tuple: (count, centroids) where:
-            - count (int): Total number of detected colonies.
-            - centroids (list): List of (x, y, radius) tuples for detected circles.
-    """
-    results = model.predict(source=img_line, conf=0.25)
-    count = len(results[0].boxes.xywh.tolist())
+def colony_counting_yolo(img_line, model, conf=0.5):
 
-    centroids = [(int(x), int(y), min(int(w), int(h))/2) for x, y, w, h in results[0].boxes.xywh.cpu().numpy()]
+    results = model.predict(source=img_line, conf=conf)
+    list_centroids = []
+    for result in results:
+        boxes = result.boxes 
+        for box in boxes:
+        
+            coords = box.xywh[0].tolist() 
+            center_x_orig, center_y_orig, w, h = map(int, coords)
+            list_centroids.extend([(center_x_orig, center_y_orig, max(w, h) / 2)])
 
-    return count, centroids
+    return len(list_centroids), list_centroids

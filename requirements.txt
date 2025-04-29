@@ -1,13 +1,19 @@
-# Core dependencies for the colony counter application
-PyQt6==6.6.1              # GUI framework
-opencv-python-headless==4.9.0.80  # Image processing (headless to reduce size)
-numpy==1.26.4             # Numerical computations
-scipy==1.13.0             # Scientific computations
-scikit-learn==1.4.2       # Machine learning utilities (if used)
-polars==0.20.19           # Data manipulation (faster alternative to pandas)
-xlsxwriter==3.2.0         # Excel file writing
-pyscipopt==4.3.0          # Optimization solver (if used for line detection/counting)
+# Core scientific and numerical libraries
+numpy
+scipy
 
-# Development dependencies for building the executable
-pyinstaller==6.6.0        # Packaging tool
-upx==4.2.3                # Compression tool for executable size reduction
+# Computer vision
+opencv-python
+
+# Machine Learning / Object Detection
+scikit-learn
+ultralytics
+
+# Optimization
+pyscipopt
+
+# Data Handling
+polars
+
+# Graphical User Interface (GUI)
+PyQt6

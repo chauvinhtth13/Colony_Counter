@@ -30,7 +30,7 @@ class LayoutManager:
         """Create the main application layout."""
         main_layout = QHBoxLayout()
         main_layout.addLayout(self.create_left_panel(), stretch=0)
-        main_layout.addLayout(self.create_center_panel(), stretch=2)
+        main_layout.addLayout(self.create_center_panel(), stretch=4)
         main_layout.addLayout(self.create_right_panel(), stretch=1)
         return main_layout
 
@@ -73,12 +73,11 @@ class LayoutManager:
         
         self.image_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.image_label.setMinimumSize(
-            int(self.parent.screen_width * 0.6), int(self.parent.screen_height * 0.8)
+            int(self.parent.screen_width * 0.6), int(self.parent.screen_height * 0.85)
         )
-        center_layout.addWidget(self.image_label, stretch=2)
-    
-        center_layout.addLayout(self.bottom_layout, stretch=1)
-        center_layout.addWidget(self.progress_bar, stretch=0)
+        center_layout.addWidget(self.image_label,4)
+        center_layout.addLayout(self.bottom_layout,1)
+        center_layout.addWidget(self.progress_bar,0)
         return center_layout
 
     def create_right_panel(self):
@@ -109,15 +108,19 @@ class LayoutManager:
     def create_spinbox_group(self, line_index):
         """Create spinbox group with visible default values."""
         group = QGroupBox(f"Line {line_index + 1}")
+        group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        group.setFixedHeight(80)
         layout = QVBoxLayout()
 
         configs = [
-            ("λ:", 0, 100, self.parent.default_params["Lambda"], 1, False, 
-             f"Lambda (default: {self.parent.default_params['Lambda']})"),
-            ("Sp:", 0.0, 1.0, self.parent.default_params["Spacing"], 0.01, True, 
-             f"Spacing (default: {self.parent.default_params['Spacing']})"),
-            ("R:", 0, 100, self.parent.default_params["Min Radius"], 0, False, 
-             f"Min Radius (default: {self.parent.default_params['Min Radius']})")
+            # ("λ:", 0, 100, self.parent.default_params["Lambda"], 1, False, 
+            #  f"Lambda (default: {self.parent.default_params['Lambda']})"),
+            # ("Sp:", 0.0, 1.0, self.parent.default_params["Spacing"], 0.01, True, 
+            #  f"Spacing (default: {self.parent.default_params['Spacing']})"),
+            # ("R:", 0, 100, self.parent.default_params["Min Radius"], 0, False, 
+            #  f"Min Radius (default: {self.parent.default_params['Min Radius']})")
+            ("Conf:", 0.0, 1.0, self.parent.default_params["Confidence"], 0.01, True, 
+             f"Confidence Threshold (default: {self.parent.default_params['Confidence']})")
         ]
 
         for label, min_v, max_v, def_v, step, is_double, tip in configs:
@@ -161,9 +164,10 @@ class LayoutManager:
                 values.append(group_vals)
         
         if not values:
-            values = [[self.parent.default_params["Lambda"], 
-                       self.parent.default_params["Spacing"], 
-                       self.parent.default_params["Min Radius"]]]
+            values = [[#self.parent.default_params["Lambda"], 
+                       #self.parent.default_params["Spacing"], 
+                       #self.parent.default_params["Min Radius"],
+                       self.parent.default_params['Confidence']]]
         return values
 
     def clear_spinboxes(self):

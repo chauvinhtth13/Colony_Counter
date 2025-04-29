@@ -24,10 +24,10 @@ def preprocess_image(img_org, blur_size=DEFAULT_BLUR_SIZE, kernel_size=DEFAULT_K
     img_gray = cv2.cvtColor(img_org, cv2.COLOR_BGR2GRAY)
     img_blurred = cv2.GaussianBlur(img_gray, blur_size, sigmaX)
     _, img_bin = cv2.threshold(img_blurred, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    kernel = np.ones(kernel_size, np.uint8)
-    img_denoise = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN, kernel, iterations=1)
+    # kernel = np.ones(kernel_size, np.uint8)
+    # img_denoise = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN, kernel, iterations=1)
     
-    return img_denoise
+    return img_bin
 
 def crop_plate(img_org, min_radius=400, max_radius=500, center=None):
     """Crops a circular region (e.g., a plate) from an image.
@@ -78,7 +78,10 @@ def crop_plate(img_org, min_radius=400, max_radius=500, center=None):
     mask = np.zeros((crop_h, crop_w), dtype=np.uint8)
     cv2.circle(mask, (center[0] - crop_start_x, center[1] - crop_start_y), radius, 255, -1)
     
-    return cv2.bitwise_and(img_cropped, img_cropped, mask=mask), radius
+    img_cropped = cv2.bitwise_and(img_cropped, img_cropped, mask=mask)
+    img_cropped = cv2.convertScaleAbs(img_cropped, alpha=1.3, beta=-30)
+
+    return img_cropped, radius
 
 def detect_splitting_line(img_bin, thresh_factor=0.8):
     """Segments touching objects in a binary image using distance transform.
