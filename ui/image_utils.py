@@ -16,7 +16,7 @@ class ImageUtils:
         self.parent.layout_manager.image_label.setPixmap(pixmap.scaled(
             self.parent.layout_manager.image_label.size(),
             Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.FastTransformation
+            Qt.TransformationMode.SmoothTransformation
         ))
 
     def draw_lines(self, lines_coords):
@@ -34,7 +34,7 @@ class ImageUtils:
         self.parent.layout_manager.image_label.setPixmap(pixmap.scaled(
             self.parent.layout_manager.image_label.size(),
             Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.FastTransformation
+            Qt.TransformationMode.SmoothTransformation
         ))
 
 
@@ -94,7 +94,8 @@ class ImageUtils:
         
         point_diameter = 5
 
-        for cx, cy, _ in colony_coords:
+        for coords in colony_coords:
+            cx, cy= coords[0:2]
             scaled_x = int(cx * scale_factor + offset_x)
             scaled_y = int(cy * scale_factor + offset_y)
             painter.drawEllipse(scaled_x - point_diameter // 2, 
@@ -105,7 +106,7 @@ class ImageUtils:
         self.parent.layout_manager.image_label.setPixmap(pixmap.scaled(
             self.parent.layout_manager.image_label.size(),
             Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.FastTransformation
+            Qt.TransformationMode.SmoothTransformation
         ))
 
     def get_current_pixmap(self):

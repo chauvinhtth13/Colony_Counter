@@ -52,7 +52,7 @@ class ColonyDetector:
             
         self.parent.layout_manager.progress_bar.setValue(100)
 
-        self.parent.colony_coords = list_centroids_crop
+        self.parent.colony_coords = list_centroids_crop[:, 0:2]
 
         self.parent.image_utils.draw_lines(sort_lines(self.parent.view_lines_coords))
         self.parent.image_utils.draw_colony(sort_lines(self.parent.view_lines_coords),number_colony, self.parent.colony_coords)
